@@ -97,14 +97,14 @@
             </div>
           </div>
         </div>
-      </div>
-
-      <!-- Nút setting -->
-      <div class="p-3">
+              <!-- Nút setting -->
+      <div class="p-3 settting">
         <button class="btn btn-dark" title="Cấu hình" @click="open = true">
           <span class="material-symbols-outlined">settings</span>
         </button>
       </div>
+      </div>
+
     </div>
 
     <!-- Modal cấu hình -->
@@ -268,6 +268,7 @@ export default {
             width: 5cm;
             padding: 10px;
             font-size: 14px;
+            border: 1px soild #000
           }
           .title {
             font-size: 14px;
