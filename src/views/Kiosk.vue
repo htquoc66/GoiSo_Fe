@@ -5,20 +5,22 @@
         <h3>BỆNH VIỆN ĐA KHOA SA ĐÉC</h3>
         <h4>Số 153, Nguyễn Sinh Sắc, K.Hòa Khánh, Phường Sa Đéc, Tỉnh Đồng Tháp</h4>
       </div>
+
       <div class="bottom">
         <h1 class="text-center mt-3 mb-5">HỆ THỐNG QUÉT THẺ LẤY SỐ THÔNG MINH</h1>
+
         <div class="content row">
-          <!-- Form bên trái -->
+          <!-- Bên trái: form quét -->
           <div class="col-6 px-5 d-flex flex-column justify-content-between">
             <form @submit.prevent class="form1">
               <!-- Ô input để quét -->
               <div class="form-group mb-2">
                 <label class="form-label">Quét thẻ (CCCD/BHYT):</label>
-                <input ref="inputScan" v-model="raw" @change="parseData" type="text" class="form-control"
+                <input ref="inputScan" v-model="raw" @keyup.enter="parseData" type="text" class="form-control"
                   placeholder="Đưa thẻ vào máy quét..." />
               </div>
 
-              <!-- Các input 2 cột -->
+              <!-- Các input -->
               <div class="row">
                 <div class="col-6 form-group mb-2">
                   <label class="form-label">Số CCCD/BHYT</label>
@@ -66,7 +68,7 @@
             </div>
           </div>
 
-          <!-- Bên phải -->
+          <!-- Bên phải: nút chọn -->
           <div class="col-6 d-flex flex-column justify-content-around px-5 mt-3">
             <!-- Khám thường -->
             <div v-if="showThuong" class="mb-3">
@@ -74,7 +76,9 @@
                 <span class="fw-bold">Đã cấp đến: {{ soCapThuong }}</span>
                 <span class="fw-bold">Phục vụ đến: {{ soPhucVuThuong }}</span>
               </div>
-              <button class="btn btn-primary btn-xxl w-100" @click="printTicket('Khám thường')">KHÁM THƯỜNG</button>
+              <button class="btn btn-primary btn-xxl w-100" @click="submitToApi(91, 'Khám thường')">
+                KHÁM THƯỜNG
+              </button>
             </div>
 
             <!-- Khám ưu tiên -->
@@ -83,7 +87,9 @@
                 <span class="fw-bold">Đã cấp đến: {{ soCapUuTien }}</span>
                 <span class="fw-bold">Phục vụ đến: {{ soPhucVuUuTien }}</span>
               </div>
-              <button class="btn btn-warning btn-xxl w-100" @click="printTicket('Khám ưu tiên')">KHÁM ƯU TIÊN</button>
+              <button class="btn btn-warning btn-xxl w-100" @click="submitToApi(92, 'Khám ưu tiên')">
+                KHÁM ƯU TIÊN
+              </button>
             </div>
 
             <!-- Khám theo yêu cầu -->
@@ -92,35 +98,36 @@
                 <span class="fw-bold">Đã cấp đến: {{ soCapYeuCau }}</span>
                 <span class="fw-bold">Phục vụ đến: {{ soPhucVuYeuCau }}</span>
               </div>
-              <button class="btn btn-success btn-xxl w-100" @click="printTicket('Khám theo yêu cầu')">KHÁM THEO YÊU
-                CẦU</button>
+              <button class="btn btn-success btn-xxl w-100" @click="submitToApi(93, 'Khám theo yêu cầu')">
+                KHÁM THEO YÊU CẦU
+              </button>
             </div>
           </div>
         </div>
-              <!-- Nút setting -->
-      <div class="p-3 settting">
-        <button class="btn btn-dark" title="Cấu hình" @click="open = true">
-          <span class="material-symbols-outlined">settings</span>
-        </button>
-      </div>
-      </div>
 
+        <!-- Nút setting -->
+        <div class="p-3 settting">
+          <button class="btn btn-dark" title="Cấu hình" @click="open = true">
+            <span class="material-symbols-outlined">settings</span>
+          </button>
+        </div>
+      </div>
     </div>
 
-    <!-- Modal cấu hình -->
+    <!-- Modal -->
     <div v-if="open" class="modal-mask">
       <div class="modal-container">
         <h4 class="mb-3">Cấu hình hiển thị nút</h4>
         <div class="form-check">
-          <input class="form-check-input" type="checkbox" v-model="showThuong" id="thuong">
+          <input class="form-check-input" type="checkbox" v-model="showThuong" id="thuong" />
           <label class="form-check-label" for="thuong">Khám thường</label>
         </div>
         <div class="form-check">
-          <input class="form-check-input" type="checkbox" v-model="showUuTien" id="uutien">
+          <input class="form-check-input" type="checkbox" v-model="showUuTien" id="uutien" />
           <label class="form-check-label" for="uutien">Khám ưu tiên</label>
         </div>
         <div class="form-check">
-          <input class="form-check-input" type="checkbox" v-model="showYeuCau" id="yeucau">
+          <input class="form-check-input" type="checkbox" v-model="showYeuCau" id="yeucau" />
           <label class="form-check-label" for="yeucau">Khám theo yêu cầu</label>
         </div>
 
@@ -133,6 +140,8 @@
 </template>
 
 <script>
+import axios from "axios";
+
 export default {
   data() {
     return {
@@ -148,48 +157,45 @@ export default {
         han_the: "",
         noi_kcb: "",
       },
-      soCapThuong: 120,
-      soPhucVuThuong: 115,
-      soCapUuTien: 40,
-      soPhucVuUuTien: 37,
-      soCapYeuCau: 15,
-      soPhucVuYeuCau: 12,
       showThuong: true,
       showUuTien: true,
       showYeuCau: true,
+
+      // demo số hiện tại / phục vụ
+      soCapThuong: 120,
+      soPhucVuThuong: "xx",
+      soCapUuTien: 40,
+      soPhucVuUuTien: "xx",
+      soCapYeuCau: 15,
+      soPhucVuYeuCau: "xx",
     };
   },
-  watch: {
-    showThuong(val) {
-      localStorage.setItem("showThuong", val);
-    },
-    showUuTien(val) {
-      localStorage.setItem("showUuTien", val);
-    },
-    showYeuCau(val) {
-      localStorage.setItem("showYeuCau", val);
-    },
-  },
   mounted() {
-
-    this.$nextTick(() => {
-      this.$refs.inputScan?.focus();
-    });
-    // Lấy trạng thái từ localStorage nếu có
-    const thuong = localStorage.getItem("showThuong");
-    const uutien = localStorage.getItem("showUuTien");
-    const yeucau = localStorage.getItem("showYeuCau");
-
-    if (thuong !== null) this.showThuong = thuong === "true";
-    if (uutien !== null) this.showUuTien = uutien === "true";
-    if (yeucau !== null) this.showYeuCau = yeucau === "true";
+    this.fetchSoCap();
   },
   methods: {
-    parseData() {
-      const parts = this.raw.split("||");
-      if (parts.length < 3) return;
+    formatSo(num) {
+      if (!num) return "0000";
+      return String(num).padStart(4, "0");
+    },
 
-      // Reset trước
+    hexToUtf8(hex) {
+      if (!hex) return "";
+      try {
+        const bytes = [];
+        for (let c = 0; c < hex.length; c += 2) {
+          bytes.push(parseInt(hex.substr(c, 2), 16));
+        }
+        return new TextDecoder("utf-8").decode(new Uint8Array(bytes));
+      } catch (e) {
+        return hex;
+      }
+    },
+
+    parseData() {
+      const parts = this.raw.split("|").map((p) => p.trim());
+      if (parts.length < 2) return;
+
       this.fields = {
         stt: "",
         so_the: "",
@@ -201,30 +207,28 @@ export default {
         noi_kcb: "",
       };
 
-      // Nếu là CCCD (12 số)
-      if (/^\d{12}$/.test(parts[1])) {
-        this.fields.so_the = parts[1] || "";
+      // CCCD
+      if (/^\d{12}$/.test(parts[0])) {
+        this.fields.so_the = parts[0];
         this.fields.ho_ten = parts[2] || "";
         this.fields.ngay_sinh = parts[3] || "";
         this.fields.gioi_tinh = parts[4] || "";
         this.fields.thuong_tru = parts[5] || "";
       }
-      // Nếu là BHYT
-      else {
-        this.fields.so_the = parts[1] || "";
-        this.fields.ho_ten = parts[2] || "";
-        this.fields.ngay_sinh = parts[3] || "";
-        this.fields.gioi_tinh = parts[4] || "";
-        this.fields.han_the = parts[5] || "";
-        this.fields.noi_kcb = parts[6] || "";
+      // BHYT
+      else if (/^\d{10}$/.test(parts[0])) {
+        this.fields.so_the = parts[0];
+        this.fields.ho_ten = this.hexToUtf8(parts[1]);
+        this.fields.ngay_sinh = parts[2] || "";
+        this.fields.gioi_tinh = parts[3] === "1" ? "Nam" : "Nữ";
+        this.fields.noi_kcb = parts[5] || "";
+        this.fields.han_the = parts[12] || "";
       }
 
-      // Xoá input raw sau khi quét
       this.raw = "";
-
-      // Focus lại input
       this.$nextTick(() => this.$refs.inputScan?.focus());
     },
+
     resetForm() {
       this.fields = {
         stt: "",
@@ -236,79 +240,107 @@ export default {
         han_the: "",
         noi_kcb: "",
       };
-
-      this.$nextTick(() => this.$refs.inputScan?.focus()); // reset xong focus lại
+      this.$nextTick(() => this.$refs.inputScan?.focus());
     },
-    // In phiếu
-   printTicket(loai) {
-  const win = window.open(
-    "",
-    "_blank",
-    `width=${screen.width},height=${screen.height}`
-  );
-  const now = new Date();
-  const date = now.toLocaleDateString("vi-VN");
-  const time = now.toLocaleTimeString("vi-VN");
 
-  win.document.write(`
-    <html>
-      <head>
-        <title>Phiếu khám</title>
-        <style>
-          @page {
-            size: 5cm auto;
-            margin: 0;
-          }
-          body {
-            font-family: Arial, sans-serif;
-            text-align: center;
-            margin: 0;
-          }
-          .ticket {
-            width: 5cm;
-            padding: 10px;
-            font-size: 14px;
-            border: 1px soild #000
-          }
-          .title {
-            font-size: 14px;
-            font-weight: bold;
-          }
-          .type {
-            font-size: 15px;
-            margin: 6px 0;
-          }
-          .info {
-            margin-top: 12px;
-          }
-          .info div {
-            margin: 4px 0;
-          }
-          .datetime {
-            font-size: 10px;
-            margin-top: 10px;
-            
-          }
-        </style>
-      </head>
-      <body onload="window.print(); window.close();">
-        <div class="ticket">
-          <div class="title">BỆNH VIỆN ĐA KHOA SA ĐÉC</div>
-          <div class="type">${loai.toUpperCase()}</div>
-          <div class="info">
-            <div><b>Họ tên:</b> xxx</div>
-            <div><b>STT:</b> xxx</div>
-          </div>
-          <div class="datetime">
-            Ngày: ${date} &nbsp;|&nbsp; Lúc: ${time}
-          </div>
-        </div>
-      </body>
-    </html>
-  `);
-  win.document.close();
-}
+    async submitToApi(phankhu, loai) {
+      const res = await axios.post(`/benhnhan`, {
+        mathe: this.fields.so_the,
+        hoten: this.fields.ho_ten,
+        ngaysinh: this.fields.ngay_sinh,
+        phankhu: phankhu,
+      });
+      const data = res.data;
+      this.printTicket(loai, data);
+      this.fetchSoCap();
+    },
+    async fetchSoCap() {
+      try {
+        const res = await axios.get("/sotts");
+        const data = res.data;
 
+        this.soCapThuong = data["91"] || 0;
+        this.soCapUuTien = data["92"] || 0;
+        this.soCapYeuCau = data["93"] || 0;
+      } catch (err) {
+        console.error("Lỗi load số đã cấp:", err);
+      }
+    },
+
+    printTicket(loai, benhNhan) {
+      const win = window.open("", "_blank", `width=${screen.width},height=${screen.height}`);
+      const now = new Date();
+      const date = now.toLocaleDateString("vi-VN");
+      const time = now.toLocaleTimeString("vi-VN");
+
+      win.document.write(`
+       <html>
+          <head>
+            <title>Phiếu khám</title>
+            <style>
+              @page { size: 5cm auto; margin: 0; }
+              body {
+                font-family: Arial, sans-serif;
+                margin: 0;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                height: 100vh;
+              }
+              .ticket {
+                width: 5cm;
+                padding: 4px;
+                font-size: 14px;
+                text-align: center;
+              }
+              .title {
+                font-size: 12px;
+                font-weight: bold;
+              }
+              .type {
+                font-size: 14px;
+                font-weight: bold;
+                margin-top: 4px;
+
+              }
+              .sott {
+                font-size: 24px;
+                font-weight: bold;
+                margin-top: 4px;
+
+              }
+              .hoten {
+                margin-top: 4px;
+
+                font-size: 14px;
+              }
+              .datetime {
+                margin-top: 4px;
+                font-size: 10px;
+              }
+            </style>
+          </head>
+          <body onload="window.print(); window.close();">
+            <div class="ticket">
+              <div class="title">BỆNH VIỆN ĐA KHOA SA ĐÉC</div>
+              <div class="type">${loai.toUpperCase()}</div>
+
+              <!-- STT nổi bật -->
+              <div class="sott">${this.formatSo(benhNhan.sott) || "----"}</div>
+
+              <!-- Họ tên riêng -->
+              <div class="hoten">${benhNhan.hoten || "---"}</div>
+
+              <div class="datetime">
+                Ngày: ${date} &nbsp;|&nbsp; Lúc: ${time}
+              </div>
+            </div>
+          </body>
+        </html>
+
+      `);
+      win.document.close();
+    },
   },
 };
 </script>
@@ -344,7 +376,7 @@ export default {
   background: #f9f9f6;
   color: #173468;
   padding-top: 1rem;
-  height: 100%
+  height: 100%;
 }
 
 label {

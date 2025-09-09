@@ -84,7 +84,6 @@ export default {
         this.processVoiceQueue()
       }
     },
-
     processVoiceQueue() {
       if (this.voiceQueue.length === 0) {
         this.speaking = false
@@ -180,20 +179,20 @@ export default {
         card.loai = item.loai
 
         // 🔹 Gọi API lấy thông tin bệnh nhân
-        try {
-          const res = await axios.post("http://172.16.100.10:3000/api/benhnhan", {
-            sott: Number(item.sott),
-            phankhu: Number(item.phankhu)
-          })
-          card.hoten = res.data.hoten || ""
-          card.namsinh = res.data.ngaysinh
-            ? String(res.data.ngaysinh).slice(0, 4)
-            : ""
-        } catch (err) {
-          console.error("Lỗi lấy thông tin bệnh nhân:", err)
-          card.hoten = ""
-          card.namsinh = ""
-        }
+        // try {
+        //   const res = await axios.post("http://172.16.100.10:3000/api/benhnhan", {
+        //     sott: Number(item.sott),
+        //     phankhu: Number(item.phankhu)
+        //   })
+        //   card.hoten = res.data.hoten || ""
+        //   card.namsinh = res.data.ngaysinh
+        //     ? String(res.data.ngaysinh).slice(0, 4)
+        //     : ""
+        // } catch (err) {
+        //   console.error("Lỗi lấy thông tin bệnh nhân:", err)
+        //   card.hoten = ""
+        //   card.namsinh = ""
+        // }
 
         if (item.loai === "uutien") {
           this.enqueueSpeak(`Mời bệnh nhân ưu tiên số ${item.sott} vào quầy số ${card.quay}`)
