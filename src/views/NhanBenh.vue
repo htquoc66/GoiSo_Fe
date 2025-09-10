@@ -9,11 +9,14 @@
           <div class="bottom" :class="{ blinking: blinkingIds.has(String(card.quay)) }">
             <div class="sott">
               <span v-if="card.loai === 'uutien'">Ưu tiên - </span>
-              Số: {{ formatSo(card.sott) }}
+              {{ card.sott }}
             </div>
             <div v-if="card.hoten" class="benhnhan">
               {{ card.hoten }} - {{ card.namsinh }}
             </div>
+            <!-- <div class="benhnhan">
+              Huỳnh Trung Quốc - 2001
+            </div> -->
           </div>
         </div>
       </div>
@@ -50,22 +53,7 @@ export default {
   mounted() {
     this.fetchInitial()
     this.fetchData()
-    // this.polling = setInterval(this.fetchData, 3000)
-    const startDelay = Math.random() * 1000; // 0–1000ms
-
-    setTimeout(() => {
-      const poll = () => {
-        this.fetchData();
-
-        const base = 4000;
-        const jitter = (Math.random() - 0.5) * 1000; // -500ms đến +500ms
-        const nextDelay = base + jitter;
-
-        setTimeout(poll, nextDelay);
-      };
-
-      poll();
-    }, startDelay);
+    this.polling = setInterval(this.fetchData, 3000)
 
   },
   beforeUnmount() {
@@ -73,10 +61,6 @@ export default {
     Object.values(this.blinkTimeouts).forEach(tid => clearTimeout(tid))
   },
   methods: {
-    formatSo(n) {
-      return String(n || "").padStart(3, "0")
-    },
-
     // ✅ Hàng đợi đọc loa
     enqueueSpeak(text) {
       this.voiceQueue.push(text)
@@ -96,7 +80,7 @@ export default {
       audio.play().then(() => {
         const utterance = new SpeechSynthesisUtterance(text)
         utterance.lang = "vi-VN"
-        utterance.rate = 0.9
+        utterance.rate = 1
         utterance.pitch = 1
         utterance.volume = 1
         utterance.onend = () => {
@@ -131,12 +115,42 @@ export default {
     },
 
     // 🔹 Lấy log mới
+    // async fetchData() {
+    //   try {
+    //     const res = await axios.get("/nhan-benh-logs")
+    //     const data = Array.isArray(res.data) ? res.data : []
+    //     const newLogs = data.filter(l => l.id > this.lastLogId)
+    //     if (newLogs.length === 0) return
+
+    //     newLogs.sort((a, b) => a.id - b.id)
+    //     newLogs.forEach(log => {
+    //       const card = this.list.find(c => c.quay === Number(log.quay))
+    //       if (!card) return
+    //       card.queue.push({
+    //         id: log.id,
+    //         sott: log.so,
+    //         phankhu: log.phankhu,
+    //         loai: log.loai
+    //       })
+    //       this.processQueue(card)
+    //       this.lastLogId = log.id
+    //     })
+    //   } catch (err) {
+    //     console.error("Lỗi fetchData:", err)
+    //   }
+    // },
+    // 🔹 Lấy log mới
     async fetchData() {
       try {
         const res = await axios.get("/nhan-benh-logs")
         const data = Array.isArray(res.data) ? res.data : []
         const newLogs = data.filter(l => l.id > this.lastLogId)
-        if (newLogs.length === 0) return
+
+        if (newLogs.length === 0) {
+          // 👇 Không có log mới thì đồng bộ số hiện tại
+          await this.fetchInitial()
+          return
+        }
 
         newLogs.sort((a, b) => a.id - b.id)
         newLogs.forEach(log => {
@@ -155,6 +169,7 @@ export default {
         console.error("Lỗi fetchData:", err)
       }
     },
+
 
     // 🔹 Xử lý queue
     processQueue(card) {
@@ -235,14 +250,18 @@ export default {
   width: 100vw;
   padding: 0 16px;
   margin: 0;
-  overflow: hidden; /* chặn scroll */
-  --rows: 3;        /* số hàng (6 ô = 2 cột x 3 hàng) */
-  --gap: 10px;      /* khoảng cách dọc giữa các hàng (ảo, do margin thẻ .card) */
+  overflow: hidden;
+  /* chặn scroll */
+  --rows: 3;
+  /* số hàng (6 ô = 2 cột x 3 hàng) */
+  --gap: 10px;
+  /* khoảng cách dọc giữa các hàng (ảo, do margin thẻ .card) */
 }
 
 /* Mỗi cột chiếm nửa màn hình (Bootstrap col-6) và có chiều cao bằng nhau */
 .col-6 {
-  padding: 0; /* bỏ gutter để viền khớp đẹp */
+  padding: 0;
+  /* bỏ gutter để viền khớp đẹp */
 }
 
 /* Dùng d-flex trên col để .card cao 100% */
@@ -258,11 +277,13 @@ export default {
   height: 100%;
   display: flex;
   flex-direction: column;
-  margin: 5px;               /* tạo khoảng cách giữa các ô */
+  margin: 5px;
+  /* tạo khoảng cách giữa các ô */
   border-radius: 15px;
-  overflow: hidden;          /* đảm bảo bo góc cho phần con */
+  overflow: hidden;
+  /* đảm bảo bo góc cho phần con */
   background: #fff;
-  box-shadow: rgba(0,0,0,0.08) 0 2px 6px;
+  box-shadow: rgba(0, 0, 0, 0.08) 0 2px 6px;
 }
 
 /* ==== Header (top) ==== */
@@ -286,7 +307,8 @@ export default {
   border-top: 6px solid #41bfa9;
   background: #f9f9f6;
   color: #173468;
-  flex: 1;                         /* chiếm hết phần còn lại để các card bằng nhau */
+  flex: 1;
+  /* chiếm hết phần còn lại để các card bằng nhau */
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -295,36 +317,38 @@ export default {
 }
 
 .sott {
-  font-size: 3.5vw;
-  font-weight: 800;
+  font-size: 5vw;
+  font-weight: 700;
   line-height: 1.1;
 }
 
-/* Tên bệnh nhân – tránh đẩy cao ô */
 .benhnhan {
-  font-size: 3vw;
+  font-size: 2.5vw;
   font-weight: 600;
   margin-top: 6px;
   line-height: 1.3;
-  white-space: nowrap;        /* 1 dòng */
+  white-space: nowrap;
   overflow: hidden;
-  text-overflow: ellipsis;    /* hiển thị ... nếu dài */
+  text-overflow: ellipsis;
+  /* hiển thị ... nếu dài */
 }
 
 /* ==== Hiệu ứng chớp ==== */
 @keyframes blinkbg {
-  0%, 100% {
+
+  0%,
+  100% {
     background: #FFD600;
     color: #000;
   }
+
   50% {
     background: #f9f9f6;
     color: #173468;
   }
 }
+
 .bottom.blinking {
   animation: blinkbg 1s steps(2, start) infinite;
 }
-
-
 </style>
