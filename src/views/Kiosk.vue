@@ -84,7 +84,7 @@
             <!-- Khám ưu tiên -->
             <div v-if="showUuTien" class="mb-3">
               <div class="d-flex justify-content-between px-2 mb-2 stt-info">
-                <span class="fw-bold">Đã cấp đến: {{ soCapUuTien }}</span>
+                <span class="fw-bold">Đã cấp đến: {{ soCapUuTien}}</span>
                 <span class="fw-bold">Phục vụ đến: {{ soPhucVuUuTien }}</span>
               </div>
               <button class="btn btn-warning btn-xxl w-100" @click="submitToApi(92, 'Khám ưu tiên')">
@@ -95,7 +95,7 @@
             <!-- Khám theo yêu cầu -->
             <div v-if="showYeuCau" class="mb-3">
               <div class="d-flex justify-content-between px-2 mb-2 stt-info">
-                <span class="fw-bold">Đã cấp đến: {{ soCapYeuCau }}</span>
+                <span class="fw-bold">Đã cấp đến: {{ soCapYeuCau}}</span>
                 <span class="fw-bold">Phục vụ đến: {{ soPhucVuYeuCau }}</span>
               </div>
               <button class="btn btn-success btn-xxl w-100" @click="submitToApi(93, 'Khám theo yêu cầu')">
@@ -162,22 +162,22 @@ export default {
       showYeuCau: true,
 
       // demo số hiện tại / phục vụ
-      soCapThuong: 120,
-      soPhucVuThuong: "xx",
-      soCapUuTien: 40,
-      soPhucVuUuTien: "xx",
-      soCapYeuCau: 15,
-      soPhucVuYeuCau: "xx",
+      soCapThuong: 0,
+      soPhucVuThuong: 0,
+      soCapUuTien: 0,
+      soPhucVuUuTien: 0,
+      soCapYeuCau: 0,
+      soPhucVuYeuCau: 0,
     };
   },
   mounted() {
     this.fetchSoCap();
   },
   methods: {
-    formatSo(num) {
-      if (!num) return "0000";
-      return String(num).padStart(4, "0");
-    },
+    // formatSo(num) {
+    //   if (!num) return "0000";
+    //   return String(num).padStart(4, "0");
+    // },
 
     hexToUtf8(hex) {
       if (!hex) return "";
@@ -242,7 +242,6 @@ export default {
       };
       this.$nextTick(() => this.$refs.inputScan?.focus());
     },
-
     async submitToApi(phankhu, loai) {
       const res = await axios.post(`/benhnhan`, {
         mathe: this.fields.so_the,
@@ -266,7 +265,6 @@ export default {
         console.error("Lỗi load số đã cấp:", err);
       }
     },
-
     printTicket(loai, benhNhan) {
       const win = window.open("", "_blank", `width=${screen.width},height=${screen.height}`);
       const now = new Date();
@@ -282,37 +280,36 @@ export default {
               body {
                 font-family: Arial, sans-serif;
                 margin: 0;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                height: 100vh;
               }
               .ticket {
-                width: 5cm;
+                width: 7.8cm;
                 padding: 4px;
                 font-size: 14px;
                 text-align: center;
+                border: 1px solid #000;
+
+              }
+              .tenphieu{
+                font-size: 14px;
               }
               .title {
-                font-size: 12px;
+                margin-top: 4px;
+                font-size: 16px;
                 font-weight: bold;
               }
               .type {
-                font-size: 14px;
+                font-size: 16px;
                 font-weight: bold;
                 margin-top: 4px;
-
               }
               .sott {
-                font-size: 24px;
+                font-size: 30px;
                 font-weight: bold;
                 margin-top: 4px;
-
               }
               .hoten {
                 margin-top: 4px;
-
-                font-size: 14px;
+                font-size: 16px;
               }
               .datetime {
                 margin-top: 4px;
@@ -322,11 +319,12 @@ export default {
           </head>
           <body onload="window.print(); window.close();">
             <div class="ticket">
+              <div class="tenphieu">PHIẾU ĐĂNG KÝ NHẬN BỆNH</div>
               <div class="title">BỆNH VIỆN ĐA KHOA SA ĐÉC</div>
               <div class="type">${loai.toUpperCase()}</div>
 
               <!-- STT nổi bật -->
-              <div class="sott">${this.formatSo(benhNhan.sott) || "----"}</div>
+              <div class="sott">${benhNhan.sott || "----"}</div>
 
               <!-- Họ tên riêng -->
               <div class="hoten">${benhNhan.hoten || "---"}</div>
