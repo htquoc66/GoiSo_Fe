@@ -209,6 +209,28 @@ export default {
         //   card.namsinh = ""
         // }
 
+        try {
+          const res = await axios.post("/thongtin-benhnhan", {
+            sott: Number(item.sott),
+            phankhu: Number(item.phankhu)
+          })
+          console.log(res.data)
+          card.hoten = res.data.hoten || ""
+          // card.namsinh = res.data.ngaysinh
+          //   ? String(res.data.ngaysinh).slice(0, 4)
+          //   : ""
+
+          card.namsinh = res.data.ngaysinh
+            ? res.data.ngaysinh.split("/").pop() // lấy phần cuối sau dấu "/"
+            : ""
+
+        } catch (err) {
+          console.error("Lỗi lấy thông tin bệnh nhân:", err)
+          card.hoten = ""
+          card.namsinh = ""
+        }
+
+
         if (item.loai === "uutien") {
           this.enqueueSpeak(`Mời bệnh nhân ưu tiên số ${item.sott} vào quầy số ${card.quay}`)
         } else {

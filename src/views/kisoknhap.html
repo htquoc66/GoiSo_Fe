@@ -232,3 +232,39 @@ label{
   cursor: pointer;
 }
 </style>
+    parseData() {
+      const parts = this.raw.split("|").map((p) => p.trim());
+      if (parts.length < 2) return;
+
+      this.fields = {
+        stt: "",
+        so_the: "",
+        ho_ten: "",
+        ngay_sinh: "",
+        gioi_tinh: "",
+        thuong_tru: "",
+        han_the: "",
+        noi_kcb: "",
+      };
+
+      // CCCD
+      if (/^\d{12}$/.test(parts[0])) {
+        this.fields.so_the = parts[0];
+        this.fields.ho_ten = parts[2] || "";
+        this.fields.ngay_sinh = this.formatDate(parts[3]) || "";
+        this.fields.gioi_tinh = parts[4] || "";
+        this.fields.thuong_tru = parts[5] || "";
+      }
+      // BHYT
+      else if (/^\d{10}$/.test(parts[0])) {
+        this.fields.so_the = parts[0];
+        this.fields.ho_ten = this.hexToUtf8(parts[1]);
+        this.fields.ngay_sinh = this.formatDate(parts[2]) || "";
+        this.fields.gioi_tinh = parts[3] === "1" ? "Nam" : "Nữ";
+        this.fields.noi_kcb = parts[5] || "";
+        this.fields.han_the = parts[12] || "";
+      }
+
+      this.raw = "";
+      this.$nextTick(() => this.$refs.inputScan?.focus());
+    },

@@ -16,8 +16,12 @@
               <!-- Ô input để quét -->
               <div class="form-group mb-2">
                 <label class="form-label">Quét thẻ (CCCD/BHYT):</label>
-                <input ref="inputScan" v-model="raw" @keyup.enter="parseData" @keydown="handleKeydown" type="text"
-                  class="form-control" placeholder="Đưa thẻ vào máy quét..." />
+                <!-- <input ref="inputScan" v-model="raw" @keyup.enter="parseData" type="text"
+                  class="form-control" placeholder="Đưa thẻ vào máy quét..." /> -->
+                <input ref="inputScan" v-model="raw" @keyup.enter="parseData" type="text" class="form-control"
+                  placeholder="Đưa thẻ vào máy quét..." />
+
+
               </div>
 
               <!-- Các input -->
@@ -154,11 +158,14 @@
     </div>
 
   </div>
+  <div class="btn-dong" @click="exitKiosk">
+  <span class="material-symbols-outlined">logout</span> Thoát
+</div>
 </template>
 
 <script>
+const LS_KEY = "phieuso:show-buttons";
 import axios from "axios";
-
 export default {
   data() {
     return {
@@ -194,40 +201,46 @@ export default {
   },
   mounted() {
     this.fetchSoCap();
+
+    const saved = localStorage.getItem(LS_KEY);
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        this.showThuong = parsed.showThuong ?? true;
+        this.showUuTien = parsed.showUuTien ?? true;
+        this.showYeuCau = parsed.showYeuCau ?? true;
+      } catch (e) {
+        console.error("Lỗi đọc localStorage:", e);
+      }
+    }
+
+    this.$nextTick(() => {
+      this.$refs.inputScan?.focus();
+    });
+
+  },
+  watch: {
+    showThuong: "saveConfig",
+    showUuTien: "saveConfig",
+    showYeuCau: "saveConfig",
   },
   methods: {
-    // formatSo(num) {
-    //   if (!num) return "0000";
-    //   return String(num).padStart(4, "0");
-    // },
-    handleKeydown(e) {
-      const key = e.key.toLowerCase();
+    exitKiosk() {
+    // Nếu chỉ chạy trong Chrome toàn màn hình
+    document.exitFullscreen?.();
 
-      // 🚫 Chặn Tab
-      if (key === "tab") {
-        e.preventDefault();
-        return;
-      }
-
-      // 🚫 Chặn Ctrl+T (tab mới), Ctrl+N (cửa sổ mới)
-      if ((e.ctrlKey && key === "t") || (e.ctrlKey && key === "n")) {
-        e.preventDefault();
-        return;
-      }
-
-      // 🚫 Chặn Ctrl+Shift+T (mở lại tab đóng)
-      if (e.ctrlKey && e.shiftKey && key === "t") {
-        e.preventDefault();
-        return;
-      }
-
-      // 🚫 Chặn Ctrl+Shift+N (cửa sổ ẩn danh)
-      if (e.ctrlKey && e.shiftKey && key === "n") {
-        e.preventDefault();
-        return;
-      }
+    // Nếu chạy trong Electron/Chrome App có kiosk
+    // có thể gọi API để đóng cửa sổ
+    window.close();
+  },
+    saveConfig() {
+      const config = {
+        showThuong: this.showThuong,
+        showUuTien: this.showUuTien,
+        showYeuCau: this.showYeuCau,
+      };
+      localStorage.setItem(LS_KEY, JSON.stringify(config));
     },
-
     hexToUtf8(hex) {
       if (!hex) return "";
       try {
@@ -239,43 +252,6 @@ export default {
       } catch (e) {
         return hex;
       }
-    },
-
-    parseData() {
-      const parts = this.raw.split("|").map((p) => p.trim());
-      if (parts.length < 2) return;
-
-      this.fields = {
-        stt: "",
-        so_the: "",
-        ho_ten: "",
-        ngay_sinh: "",
-        gioi_tinh: "",
-        thuong_tru: "",
-        han_the: "",
-        noi_kcb: "",
-      };
-
-      // CCCD
-      if (/^\d{12}$/.test(parts[0])) {
-        this.fields.so_the = parts[0];
-        this.fields.ho_ten = parts[2] || "";
-        this.fields.ngay_sinh = this.formatDate(parts[3]) || "";
-        this.fields.gioi_tinh = parts[4] || "";
-        this.fields.thuong_tru = parts[5] || "";
-      }
-      // BHYT
-      else if (/^\d{10}$/.test(parts[0])) {
-        this.fields.so_the = parts[0];
-        this.fields.ho_ten = this.hexToUtf8(parts[1]);
-        this.fields.ngay_sinh = this.formatDate(parts[2]) || "";
-        this.fields.gioi_tinh = parts[3] === "1" ? "Nam" : "Nữ";
-        this.fields.noi_kcb = parts[5] || "";
-        this.fields.han_the = parts[12] || "";
-      }
-
-      this.raw = "";
-      this.$nextTick(() => this.$refs.inputScan?.focus());
     },
     formatDate(str) {
       if (!str) return "";
@@ -294,6 +270,128 @@ export default {
       // Trường hợp khác, trả nguyên
       return str;
     },
+    parseData() {
+      const parts = this.raw.split("|").map((p) => p.trim());
+      if (parts.length < 2) return;
+
+      this.fields = {
+        stt: "",
+        so_the: "",
+        ho_ten: "",
+        ngay_sinh: "",
+        gioi_tinh: "",
+        thuong_tru: "",
+        han_the: "",
+        noi_kcb: "",
+      };
+
+      const val = parts[0];
+
+      // 🔹 CCCD
+      if (/^\d{12}$/.test(val)) {
+        this.fields.so_the = val;
+        this.fields.ho_ten = parts[2] || "";
+        this.fields.ngay_sinh = this.formatDate(parts[3]) || parts[3] || "";
+        this.fields.gioi_tinh = parts[4] || "";
+        this.fields.thuong_tru = parts[5] || "";
+      }
+
+      // 🔹 BHYT / HS dạng chuẩn nhiều trường
+      else if (/^\d{10}$/.test(val) || /^GD\d+/.test(val) || /^HS\d+/.test(val)) {
+        this.fields.so_the = val;
+
+        // Họ tên (có thể hex hoặc plain text)
+        this.fields.ho_ten = this.isHex(parts[1])
+          ? this.hexToUtf8(parts[1])
+          : parts[1];
+
+        // Ngày sinh (có thể YYYY, ddMMyyyy, dd/MM/yyyy)
+        const ns = parts[2];
+        if (/^\d{8}$/.test(ns)) {
+          // ddMMyyyy → dd/MM/yyyy
+          this.fields.ngay_sinh = ns.replace(/(\d{2})(\d{2})(\d{4})/, "$1/$2/$3");
+        } else if (/^\d{4}$/.test(ns)) {
+          this.fields.ngay_sinh = ns; // chỉ năm
+        } else {
+          this.fields.ngay_sinh = this.formatDate(ns) || ns || "";
+        }
+
+        // Giới tính
+        if (parts[3] === "1") this.fields.gioi_tinh = "Nam";
+        else if (parts[3] === "2") this.fields.gioi_tinh = "Nữ";
+        else this.fields.gioi_tinh = parts[3] || "";
+
+        // Địa chỉ: tuỳ loại
+        let addr = "";
+        if (parts[16]) addr = parts[16]; // loại dài
+        else if (parts[4]) addr = parts[4]; // loại HS
+        this.fields.thuong_tru = this.isHex(addr) ? this.hexToUtf8(addr) : addr;
+
+        // Nơi KCB + hạn thẻ
+        this.fields.noi_kcb = parts[5] || "";
+        this.fields.han_the = parts[12] || "";
+      }
+
+      // 🔹 BHYT thủ công / máy khác xuất plain text
+      else if (/^\d{9,12}$/.test(val) && parts.length >= 6) {
+        this.fields.so_the = val;
+        this.fields.ho_ten = parts[2] || "";
+        this.fields.ngay_sinh = this.formatDate(parts[3]) || parts[3] || "";
+        this.fields.gioi_tinh = parts[4] || "";
+        this.fields.thuong_tru = parts[5] || "";
+        this.fields.han_the = parts[6] || "";
+      }
+
+      // reset input
+      this.raw = "";
+      this.$nextTick(() => this.$refs.inputScan?.focus());
+    },
+
+    // Hàm phụ
+    isHex(str) {
+      return /^[0-9a-f]+$/i.test(str.replace(/\s+/g, ""));
+    },
+
+
+
+
+    // parseData() {
+    //   const parts = this.raw.split("|").map((p) => p.trim());
+    //   if (parts.length < 2) return;
+
+    //   this.fields = {
+    //     stt: "",
+    //     so_the: "",
+    //     ho_ten: "",
+    //     ngay_sinh: "",
+    //     gioi_tinh: "",
+    //     thuong_tru: "",
+    //     han_the: "",
+    //     noi_kcb: "",
+    //   };
+
+    //   // CCCD
+    //   if (/^\d{12}$/.test(parts[0])) {
+    //     this.fields.so_the = parts[0];
+    //     this.fields.ho_ten = parts[2] || "";
+    //     this.fields.ngay_sinh = parts[3] || "";
+    //     this.fields.gioi_tinh = parts[4] || "";
+    //     this.fields.thuong_tru = parts[5] || "";
+    //   }
+    //   // BHYT
+    //   else if (/^\d{10}$/.test(parts[0])) {
+    //     this.fields.so_the = parts[0];
+    //     this.fields.ho_ten = this.hexToUtf8(parts[1]);
+    //     this.fields.ngay_sinh = parts[2] || "";
+    //     this.fields.gioi_tinh = parts[3] === "1" ? "Nam" : "Nữ";
+    //     this.fields.noi_kcb = parts[5] || "";
+    //     this.fields.han_the = parts[12] || "";
+    //   }
+
+    //   this.raw = "";
+    //   this.$nextTick(() => this.$refs.inputScan?.focus());
+    // },
+
     closeApp() {
       window.location.reload()
 
@@ -384,37 +482,35 @@ export default {
               }
               .ticket {
                 width: 7.8cm;
-                padding: 4px;
+                padding: 15px 4px;
                 font-size: 14px;
                 text-align: center;
-                border: 1px solid #000;
-
               }
               .tenphieu{
                 font-size: 14px;
               }
               .title {
                 margin-top: 4px;
-                font-size: 16px;
+                font-size: 18px;
                 font-weight: bold;
               }
               .type {
-                font-size: 16px;
+                font-size: 22px;
                 font-weight: bold;
                 margin-top: 4px;
               }
               .sott {
-                font-size: 30px;
+                font-size: 36px;
                 font-weight: bold;
                 margin-top: 4px;
               }
               .hoten {
                 margin-top: 4px;
-                font-size: 16px;
+                font-size: 18px;
               }
               .datetime {
                 margin-top: 4px;
-                font-size: 10px;
+                font-size: 12px;
               }
             </style>
           </head>
@@ -532,5 +628,4 @@ label {
   position: absolute;
   bottom: 0;
 }
-
 </style>
